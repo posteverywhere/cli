@@ -1,0 +1,12 @@
+{
+  "name": "posteverywhere",
+  "description": "Schedule and publish social media posts across 11 platforms: Instagram, TikTok, YouTube, LinkedIn, Facebook, X, Threads, Pinterest, Bluesky, Telegram and Discord. Connect accounts over OAuth, upload media, check per-platform limits before composing, and read back per-destination publish results.",
+  "version": "1.0.0",
+  "author": {
+    "name": "PostEverywhere",
+    "url": "https://posteverywhere.ai"
+  },
+  "homepage": "https://posteverywhere.ai",
+  "repository": "https://github.com/posteverywhere/cli",
+  "license": "MIT"
+}

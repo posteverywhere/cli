@@ -5,6 +5,24 @@ All notable changes to `@posteverywhere/cli` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — 2026-09-25
+
+### Added
+
+- **`queue` command.** Shows your posting queue slots and the next openings
+  (`--preview N`). `post --queue` lets the queue pick the time instead of `-s`.
+
+### Changed
+
+- Videos up to 4 GB (was 500 MB) for `upload`.
+- Docs links point at posteverywhere.ai/docs.
+
+## [0.3.1] — 2026-08-19
+
+### Changed
+
+- `upload` imports videos by URL as well as images; help text and the skill say so.
+
 ## [0.3.0] — 2026-08-17
 
 ### Added

@@ -23,7 +23,7 @@ import readline from 'node:readline';
 import { spawn } from 'node:child_process';
 
 const BASE = (process.env.POSTEVERYWHERE_API_URL || process.env.POSTEVERYWHERE_BASE_URL || 'https://app.posteverywhere.ai').replace(/\/$/, '');
-const VERSION = '0.3.0'; // keep in sync with package.json — sent as User-Agent so the API can attribute CLI usage
+const VERSION = '0.4.0'; // keep in sync with package.json — sent as User-Agent so the API can attribute CLI usage
 const CONFIG_DIR = path.join(os.homedir(), '.posteverywhere');
 const CONFIG_PATH = path.join(CONFIG_DIR, 'config.json');
 const WANT_JSON = process.argv.includes('--json') || !process.stdout.isTTY;
@@ -301,6 +301,7 @@ ${paint('Commands', C.bold)}
   logout                         Remove saved credentials
   whoami                         Show the authed account, plan & quota
   accounts                       List connected social accounts
+  queue [--preview N]            Show your posting queue slots & next openings
   platform-rules [platform]      Character limits, media constraints & features
                                  per platform (check before composing)
   connect <platform>             Connect a new account
@@ -311,7 +312,8 @@ ${paint('Commands', C.bold)}
   posts [--status x] [--platform y] [--limit n]    List posts
   results <postId>               Per-platform publish results
   retry <postId>                 Retry failed destinations
-  upload <imageUrl>              Import an image by URL -> media_id
+  upload <url>                   Import an image or MP4 video by URL -> media_id
+                                 (videos import async: poll until ready before posting)
   caption -t <topic> [--platform x] [--tone y]     AI captions
   analytics [--period week|month|all]              Analytics summary
   campaigns                      List campaigns
@@ -320,7 +322,7 @@ ${paint('Flags', C.bold)}
   --json     Machine-readable JSON output (auto-on when piped). Great for agents.
 
 Auth precedence: POSTEVERYWHERE_API_KEY env var, else the key from \`login\`.
-Docs: https://developers.posteverywhere.ai`;
+Docs: https://posteverywhere.ai/docs`;
 
 // ─── main ────────────────────────────────────────────────
 async function main() {
@@ -364,12 +366,37 @@ async function main() {
       if (!accounts.length) fail('At least one account id is required (-a 123,456). Run `posteverywhere accounts` to list ids.');
       const body: any = { content, account_ids: accounts };
       const sched = f('schedule', 's');
+      const wantQueue = f('queue') === true || f('queue') === 'true';
+      if (wantQueue && typeof sched === 'string') {
+        fail('Choose one: --queue (the queue picks the time) or -s (you pick it). Not both.');
+      }
+      if (wantQueue) body.use_queue = true;
       if (typeof sched === 'string') { body.scheduled_for = sched; body.timezone = (f('timezone') as string) || 'UTC'; }
       const media = csv(f('media', 'm'));
       if (media.length) body.media_ids = media;
       const data = await api('POST', '/posts', body);
-      if (!WANT_JSON) say(paint(`✓ ${body.scheduled_for ? 'Scheduled' : 'Publishing'} to ${accounts.length} account(s).`, C.green));
+      if (!WANT_JSON) {
+        const mode = body.use_queue ? `Queued (${data?.scheduled_for ?? 'next opening'})`
+          : body.scheduled_for ? 'Scheduled' : 'Publishing';
+        say(paint(`✓ ${mode} to ${accounts.length} account(s).`, C.green));
+      }
       return outJson(data);
+    }
+
+    case 'queue': {
+      // Preview the workspace posting queue: its recurring slots and the next
+      // openings. The upcoming list is a forecast, not a reservation - a slot
+      // is only taken when a post is created with --queue.
+      const n = f('preview');
+      const data = await api<any>('GET', `/queue${typeof n === 'string' ? `?preview=${encodeURIComponent(n)}` : ''}`);
+      if (WANT_JSON) return outJson(data);
+      if (!data?.queue) {
+        return say(paint('No posting queue set up yet. Create one in the app under Settings, Posting Queue.', C.yellow));
+      }
+      say(paint(`Queue: ${data.queue.name} (${data.queue.timezone})`, C.bold));
+      for (const u of data.upcoming ?? []) say(`  ${u.date}  ${u.time}`);
+      if (data.exhausted) say(paint('  (no further openings in the window)', C.yellow));
+      return;
     }
 
     case 'posts': {
@@ -390,7 +417,7 @@ async function main() {
 
     case 'upload': {
       const url = positional[0] || f('url');
-      if (typeof url !== 'string') fail('Usage: posteverywhere upload <imageUrl>');
+      if (typeof url !== 'string') fail('Usage: posteverywhere upload <url>  (public image or MP4 video URL)');
       return outJson(await api('POST', '/media/upload-from-url', { url }));
     }
 

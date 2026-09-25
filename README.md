@@ -63,7 +63,7 @@ export POSTEVERYWHERE_API_KEY=pe_live_...
 | `posts` | List posts, filterable by status and platform |
 | `results <postId>` | Per-platform success/failure for one post |
 | `retry <postId>` | Retry the failed destinations |
-| `upload <imageUrl>` | Import an image by URL → `media_id` |
+| `upload <url>` | Import an image or MP4 video by URL → `media_id` (videos import async — poll until ready) |
 | `caption -t <topic>` | AI captions, tuned per platform |
 | `analytics [--period]` | Performance summary |
 | `campaigns` | List campaigns |
@@ -88,7 +88,7 @@ The limits differ by two orders of magnitude — Bluesky caps at 300 characters,
 |---|---|
 | 🌐 **Homepage** | [posteverywhere.ai](https://posteverywhere.ai) |
 | 🛠️ **Developers landing page** | [posteverywhere.ai/developers](https://posteverywhere.ai/developers) |
-| 📖 **API Documentation** | [developers.posteverywhere.ai](https://developers.posteverywhere.ai) |
+| 📖 **API Documentation** | [posteverywhere.ai/docs](https://posteverywhere.ai/docs) |
 | 📦 **This CLI on npm** | [npmjs.com/package/@posteverywhere/cli](https://www.npmjs.com/package/@posteverywhere/cli) |
 | 🤖 **MCP server (npm)** | [npmjs.com/package/@posteverywhere/mcp](https://www.npmjs.com/package/@posteverywhere/mcp) |
 | 🤖 **MCP server (GitHub)** | [github.com/posteverywhere/mcp](https://github.com/posteverywhere/mcp) |

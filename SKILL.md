@@ -7,6 +7,12 @@ description: Schedule and publish social media posts to Instagram, TikTok, YouTu
 
 Manage a user's social media through the PostEverywhere CLI. Every command prints JSON.
 
+**If PostEverywhere MCP tools are available in this session, prefer them over the CLI** —
+they need no local install and no key handling. The workflow and the rules below are the
+same either way; `list_accounts` maps to `accounts`, `create_post` to `post`, and so on.
+Fall back to the CLI when the tools are absent, or when the user wants it run in a terminal
+or in CI.
+
 ## Setup (once)
 Authenticate one of two ways:
 - **Interactive:** `posteverywhere login` opens the browser; the user approves a short code and a scoped key is saved locally. Then `posteverywhere connect <platform>` to add accounts (instagram, tiktok, youtube, linkedin, facebook, x, threads, pinterest = browser OAuth; bluesky/telegram/discord = the CLI prompts for credentials).
@@ -27,9 +33,11 @@ posteverywhere post -c "Launch day! 🚀" -a 123,456
 ```bash
 posteverywhere post -c "Weekly tips thread" -a 123 -s 2026-07-01T09:00:00Z
 ```
-**With an image** — import it first, then attach the returned `media_id`:
+**With an image or video** — import it first, then attach the returned `media_id`:
 ```bash
-posteverywhere upload https://example.com/photo.jpg      # → { "media_id": "..." }
+posteverywhere upload https://example.com/photo.jpg      # image → media_id, ready immediately
+posteverywhere upload https://example.com/reel.mp4       # MP4 video (≤4GB) → media_id with status "uploading"
+                                                         #   videos import async: check until ready before posting
 posteverywhere post -c "New drop" -a 123 -m <media_id>
 ```
 
