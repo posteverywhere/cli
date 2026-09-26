@@ -5,6 +5,16 @@ All notable changes to `@posteverywhere/cli` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] — 2026-09-26
+
+### Added
+
+- **WordPress.** `connect wordpress` connects a self-hosted site with an
+  Application Password. `post` publishes blog posts: `--title`, `--body-file`
+  (Markdown-style or HTML), `--wp-status publish|draft|pending|private`,
+  `--tags`, `--categories`, `--excerpt`, `--slug`, `--no-featured-image`.
+  With `--body-file`, `-c` is optional.
+
 ## [0.4.0] — 2026-09-25
 
 ### Added

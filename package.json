@@ -1,6 +1,6 @@
 {
   "name": "@posteverywhere/cli",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Post and schedule to Instagram, TikTok, YouTube, LinkedIn, Facebook, X, Threads, Pinterest, Bluesky, Telegram & Discord from your terminal. Log in once, connect accounts, publish. Also works as a tool for Claude, Cursor and other AI agents (--json output).",
   "type": "module",
   "bin": {

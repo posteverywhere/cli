@@ -4,7 +4,7 @@
  *
  * Log in once (`posteverywhere login`), connect accounts, and post/schedule to
  * Instagram, TikTok, YouTube, LinkedIn, Facebook, X, Threads, Pinterest,
- * Bluesky, Telegram & Discord — all from your terminal.
+ * Bluesky, Telegram, Discord & WordPress — all from your terminal.
  *
  * Agent-friendly: pass --json (or pipe to a non-TTY) and every command emits
  * structured JSON so Claude, Cursor, OpenClaw etc. can parse results.
@@ -23,7 +23,7 @@ import readline from 'node:readline';
 import { spawn } from 'node:child_process';
 
 const BASE = (process.env.POSTEVERYWHERE_API_URL || process.env.POSTEVERYWHERE_BASE_URL || 'https://app.posteverywhere.ai').replace(/\/$/, '');
-const VERSION = '0.4.0'; // keep in sync with package.json — sent as User-Agent so the API can attribute CLI usage
+const VERSION = '0.5.0'; // keep in sync with package.json — sent as User-Agent so the API can attribute CLI usage
 const CONFIG_DIR = path.join(os.homedir(), '.posteverywhere');
 const CONFIG_PATH = path.join(CONFIG_DIR, 'config.json');
 const WANT_JSON = process.argv.includes('--json') || !process.stdout.isTTY;
@@ -198,7 +198,7 @@ function logout() {
 }
 
 // ─── account connect / reconnect (browser bridge) ─────────
-const HEADLESS_PLATFORMS = new Set(['bluesky', 'telegram', 'discord']);
+const HEADLESS_PLATFORMS = new Set(['bluesky', 'telegram', 'discord', 'wordpress']);
 
 async function connectHeadless(platform: string) {
   if (platform === 'bluesky') {
@@ -228,6 +228,17 @@ async function connectHeadless(platform: string) {
     const data = await api('POST', '/auth/social-connect/discord', { webhook_url: webhookUrl });
     if (WANT_JSON) return outJson(data);
     return say(paint(`✓ Connected Discord (${(data as any)?.account?.account_name || 'channel'})`, C.green));
+  }
+  if (platform === 'wordpress') {
+    say(paint('Connect WordPress (self-hosted, WordPress 5.6+)', C.bold));
+    say(paint('  WordPress: Users → Profile → Application Passwords → Add New (name it PostEverywhere)', C.dim));
+    const siteUrl = await askLine('  Site address (e.g. https://example.com): ');
+    const username = await askLine('  WordPress username: ');
+    const appPassword = await askSecret('  Application Password (not your login password): ');
+    if (!siteUrl || !username || !appPassword) fail('Site address, username and Application Password are all required.');
+    const data = await api('POST', '/accounts/connect-credential', { platform: 'wordpress', site_url: siteUrl, username, app_password: appPassword });
+    if (WANT_JSON) return outJson(data);
+    return say(paint(`✓ Connected WordPress (${(data as any)?.account?.account_name || siteUrl})`, C.green));
   }
 }
 
@@ -292,7 +303,7 @@ ${paint('Getting started', C.bold)}
   posteverywhere login              Log in (opens your browser, saves a key locally)
   posteverywhere connect <platform> Connect an account (instagram, tiktok, youtube,
                                     linkedin, facebook, x, threads, pinterest,
-                                    bluesky, telegram, discord)
+                                    bluesky, telegram, discord, wordpress)
   posteverywhere accounts           List connected accounts (+ ids & health)
   posteverywhere post -c "Hello" -a 123,456
 
@@ -309,6 +320,10 @@ ${paint('Commands', C.bold)}
   account:health <id>            Detailed health for one account
   post -c <text> -a <ids> [-s <iso>] [-m <mediaIds>]
                                  Publish now (omit -s) or schedule (-s ISO time)
+       WordPress blog post:      [--title T] [--body-file post.md] [--wp-status
+                                 publish|draft|pending|private] [--tags a,b]
+                                 [--categories News,3] [--excerpt E] [--slug s]
+                                 [--no-featured-image]  (1st image = featured)
   posts [--status x] [--platform y] [--limit n]    List posts
   results <postId>               Per-platform publish results
   retry <postId>                 Retry failed destinations
@@ -362,9 +377,33 @@ async function main() {
     case 'post': {
       const content = f('content', 'c');
       const accounts = num(f('accounts', 'a'));
-      if (typeof content !== 'string' || !content) fail('Usage: post -c "text" -a 123,456 [-s 2026-07-01T09:00:00Z] [-m mediaId1,mediaId2]');
+      // WordPress blog post: body from a file (Markdown-style or HTML) plus blog settings.
+      const bodyFile = f('body-file');
+      let blogBody: string | undefined;
+      if (typeof bodyFile === 'string') {
+        try { blogBody = fs.readFileSync(bodyFile, 'utf8'); } catch { fail(`Could not read --body-file ${bodyFile}`); }
+      }
+      if ((typeof content !== 'string' || !content) && !blogBody) fail('Usage: post -c "text" -a 123,456 [-s 2026-07-01T09:00:00Z] [-m mediaId1,mediaId2]');
       if (!accounts.length) fail('At least one account id is required (-a 123,456). Run `posteverywhere accounts` to list ids.');
-      const body: any = { content, account_ids: accounts };
+      const body: any = { content: typeof content === 'string' ? content : '', account_ids: accounts };
+      const wpSettings: Record<string, unknown> = {};
+      for (const [flag, key] of [['title', 'title'], ['wp-status', 'status'], ['excerpt', 'excerpt'], ['slug', 'slug']] as const) {
+        const v = f(flag);
+        if (typeof v === 'string') wpSettings[key] = v;
+      }
+      const tags = csv(f('tags'));
+      if (tags.length) wpSettings.tags = tags;
+      const cats = csv(f('categories'));
+      if (cats.length) wpSettings.categories = cats;
+      if (f('no-featured-image') !== undefined) wpSettings.featuredImage = 'none';
+      if (blogBody || Object.keys(wpSettings).length) {
+        body.platform_content = {
+          wordpress: {
+            ...(blogBody ? { content: blogBody } : {}),
+            ...(Object.keys(wpSettings).length ? { settings: { ...wpSettings, post_type: 'blog' } } : {}),
+          },
+        };
+      }
       const sched = f('schedule', 's');
       const wantQueue = f('queue') === true || f('queue') === 'true';
       if (wantQueue && typeof sched === 'string') {

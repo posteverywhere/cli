@@ -1,6 +1,6 @@
 ---
 name: posteverywhere
-description: Schedule and publish social media posts to Instagram, TikTok, YouTube, LinkedIn, Facebook, X, Threads, Pinterest, Bluesky, Telegram and Discord. Use when the user asks to post, schedule, draft, or analyze social media content, or to list their connected social accounts.
+description: Schedule and publish social media posts to Instagram, TikTok, YouTube, LinkedIn, Facebook, X, Threads, Pinterest, Bluesky, Telegram, Discord and WordPress blogs. Use when the user asks to post, schedule, draft, or analyze social media content, or to list their connected social accounts.
 ---
 
 # PostEverywhere
@@ -15,7 +15,7 @@ or in CI.
 
 ## Setup (once)
 Authenticate one of two ways:
-- **Interactive:** `posteverywhere login` opens the browser; the user approves a short code and a scoped key is saved locally. Then `posteverywhere connect <platform>` to add accounts (instagram, tiktok, youtube, linkedin, facebook, x, threads, pinterest = browser OAuth; bluesky/telegram/discord = the CLI prompts for credentials).
+- **Interactive:** `posteverywhere login` opens the browser; the user approves a short code and a scoped key is saved locally. Then `posteverywhere connect <platform>` to add accounts (instagram, tiktok, youtube, linkedin, facebook, x, threads, pinterest = browser OAuth; bluesky/telegram/discord/wordpress = the CLI prompts for credentials).
 - **Non-interactive (CI / headless agents):** `export POSTEVERYWHERE_API_KEY=pe_live_...` (from posteverywhere.ai → Settings → Developers).
 
 Run commands with `npx @posteverywhere/cli <command>` (or `posteverywhere <command>` if installed).
@@ -40,6 +40,11 @@ posteverywhere upload https://example.com/reel.mp4       # MP4 video (≤4GB) �
                                                          #   videos import async: check until ready before posting
 posteverywhere post -c "New drop" -a 123 -m <media_id>
 ```
+**WordPress blog post** (the body file takes # headings, **bold**, lists, links, ![caption](image:N) or raw HTML; the first image is the featured image):
+```bash
+posteverywhere post -a 789 --title "Our spring update" --body-file post.md --tags news,product --categories News -m <media_id>
+```
+Add `--wp-status draft` to save it as a WordPress draft instead of publishing. A blog post needs a title (`--title` or a leading `# Heading`).
 
 ## Before you compose for an unfamiliar platform
 `posteverywhere platform-rules` returns the character limit, image/video constraints and

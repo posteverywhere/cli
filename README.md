@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/posteverywhere/cli?style=flat-square)](https://github.com/posteverywhere/cli)
 
-Post and schedule to **Instagram, TikTok, YouTube, LinkedIn, Facebook, X, Threads, Pinterest, Bluesky, Telegram and Discord** from your terminal — or hand the whole thing to an AI agent.
+Post and schedule to **Instagram, TikTok, YouTube, LinkedIn, Facebook, X, Threads, Pinterest, Bluesky, Telegram, Discord and WordPress** from your terminal — or hand the whole thing to an AI agent.
 
 This repo is two things at once: a CLI you can drive by hand, and an **Agent Skill** that teaches Claude Code, Cursor, Codex and other agents how to use it. Every command emits JSON, so an agent can read the result of what it just did.
 
@@ -60,6 +60,7 @@ export POSTEVERYWHERE_API_KEY=pe_live_...
 | `reconnect <accountId>` | Re-authorize an account whose token expired |
 | `account:health <id>` | Why one account can't post |
 | `post -c <text> -a <ids> [-s <iso>] [-m <mediaIds>]` | Publish now, or schedule with `-s` |
+| `post -a <ids> --title <t> --body-file <md> [--wp-status draft] [--tags a,b] [--categories c]` | WordPress blog post (first image = featured image) |
 | `posts` | List posts, filterable by status and platform |
 | `results <postId>` | Per-platform success/failure for one post |
 | `retry <postId>` | Retry the failed destinations |
