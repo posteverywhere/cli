@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "posteverywhere",
-  "description": "Schedule and publish social media posts from your terminal or your agent. Instagram, TikTok, YouTube, LinkedIn, Facebook, X, Threads, Pinterest, Bluesky, Telegram and Discord.",
+  "description": "Schedule and publish social media posts from your terminal or your agent. Instagram, TikTok, YouTube, LinkedIn, Facebook, X, Threads, Pinterest, Bluesky, Telegram, Discord and WordPress.",
   "owner": {
     "name": "PostEverywhere",
     "url": "https://posteverywhere.ai"
@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "posteverywhere",
-      "description": "Post, schedule and analyze social media across 11 platforms. Connects accounts via OAuth, uploads media, checks per-platform limits before composing, and reports per-destination publish results. Every command emits JSON.",
+      "description": "Post, schedule and analyze social media across 12 platforms. Connects accounts via OAuth, uploads media, checks per-platform limits before composing, and reports per-destination publish results. Every command emits JSON.",
       "source": {
         "source": "github",
         "repo": "posteverywhere/cli"
