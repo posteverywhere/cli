@@ -21,9 +21,10 @@ import os from 'node:os';
 import path from 'node:path';
 import readline from 'node:readline';
 import { spawn } from 'node:child_process';
+import { connectAgents, formatReport, realEnv, parseClientList, CLIENT_IDS } from './agents.js';
 
 const BASE = (process.env.POSTEVERYWHERE_API_URL || process.env.POSTEVERYWHERE_BASE_URL || 'https://app.posteverywhere.ai').replace(/\/$/, '');
-const VERSION = '0.5.0'; // keep in sync with package.json — sent as User-Agent so the API can attribute CLI usage
+const VERSION = '0.7.0'; // keep in sync with package.json — sent as User-Agent so the API can attribute CLI usage
 const CONFIG_DIR = path.join(os.homedir(), '.posteverywhere');
 const CONFIG_PATH = path.join(CONFIG_DIR, 'config.json');
 const WANT_JSON = process.argv.includes('--json') || !process.stdout.isTTY;
@@ -278,11 +279,37 @@ async function connectBrowser(platform: string, opts: { mode?: 'reconnect'; acco
   fail('Timed out. Try again.');
 }
 
-async function connect(platform: string) {
-  if (!platform) fail('Usage: posteverywhere connect <platform>  (e.g. instagram, tiktok, bluesky, telegram)');
+async function connect(platform: string | undefined, flags: Record<string, string | boolean>) {
+  // No platform (or a coding agent name): connect coding agents to the hosted MCP server.
+  if (!platform || parseClientList([platform]).ids.length) return connectAgentsCmd(platform, flags);
   const p = platform.toLowerCase();
   if (HEADLESS_PLATFORMS.has(p)) return connectHeadless(p);
   return connectBrowser(p);
+}
+
+async function connectAgentsCmd(clientArg: string | undefined, flags: Record<string, string | boolean>) {
+  const list = [
+    ...(typeof flags.client === 'string' ? csv(flags.client) : []),
+    ...(typeof flags.clients === 'string' ? csv(flags.clients) : []),
+    ...(clientArg ? [clientArg] : []),
+  ];
+  if (flags.client === true) fail(`--client needs a list, e.g. --client cursor,claude-code. Known: ${CLIENT_IDS.join(', ')}`);
+  let report;
+  try {
+    report = await connectAgents(realEnv(), {
+      remove: !!flags.remove,
+      dryRun: !!flags['dry-run'],
+      all: !!flags.all,
+      yes: !!(flags.yes || flags.y),
+      clients: list,
+      interactive: TTY && !WANT_JSON && !!process.stdin.isTTY,
+    }, say);
+  } catch (e) {
+    return fail(e instanceof Error ? e.message : String(e));
+  }
+  if (WANT_JSON) outJson(report);
+  else say(formatReport(report));
+  process.exitCode = report.exit_code;
 }
 
 async function reconnect(arg: string) {
@@ -300,6 +327,9 @@ async function reconnect(arg: string) {
 const HELP = `${paint('posteverywhere', C.bold)} — post & schedule to every social platform from your terminal.
 
 ${paint('Getting started', C.bold)}
+  posteverywhere connect            Connect your coding agents (Claude Code, Cursor,
+                                    Codex, Gemini CLI, Windsurf, Cline, Zed, Claude
+                                    Desktop) to PostEverywhere in one go
   posteverywhere login              Log in (opens your browser, saves a key locally)
   posteverywhere connect <platform> Connect an account (instagram, tiktok, youtube,
                                     linkedin, facebook, x, threads, pinterest,
@@ -313,9 +343,16 @@ ${paint('Commands', C.bold)}
   whoami                         Show the authed account, plan & quota
   accounts                       List connected social accounts
   queue [--preview N]            Show your posting queue slots & next openings
+  best-times -a <ids> | --platform <p> [--tz Zone]
+                                 Best times to post (your own, platform-wide,
+                                 or general guidance; each time says which)
   platform-rules [platform]      Character limits, media constraints & features
                                  per platform (check before composing)
-  connect <platform>             Connect a new account
+  connect                        Connect every coding agent on this machine to
+                                 PostEverywhere's MCP server (sign-in happens in
+                                 each agent, no API key is written)
+       [--all] [--client cursor,claude-code] [--yes] [--dry-run] [--remove]
+  connect <platform>             Connect a new social account
   reconnect <accountId>          Re-authorize an account whose token expired
   account:health <id>            Detailed health for one account
   post -c <text> -a <ids> [-s <iso>] [-m <mediaIds>]
@@ -366,7 +403,7 @@ async function main() {
       if (!one) fail(`Unknown platform "${only}". Known: ${Object.keys(rules.platforms || {}).join(', ')}`);
       return outJson({ platform: only, ...(one as object) });
     }
-    case 'connect': return connect(positional[0]);
+    case 'connect': return connect(positional[0], flags);
     case 'reconnect': return reconnect(positional[0]);
 
     case 'account:health': {
@@ -435,6 +472,29 @@ async function main() {
       say(paint(`Queue: ${data.queue.name} (${data.queue.timezone})`, C.bold));
       for (const u of data.upcoming ?? []) say(`  ${u.date}  ${u.time}`);
       if (data.exhausted) say(paint('  (no further openings in the window)', C.yellow));
+      return;
+    }
+
+    case 'best-times': {
+      // Read-only. Several accounts give one combined recommendation.
+      const ids = f('accounts', 'a');
+      const platform = f('platform');
+      const tz = f('tz');
+      if (typeof ids !== 'string' && typeof platform !== 'string') {
+        fail('Usage: posteverywhere best-times -a <accountIds> | --platform <platform> [--tz Europe/London]');
+      }
+      const q = new URLSearchParams();
+      if (typeof ids === 'string') q.set('account_ids', ids);
+      else q.set('platform', platform as string);
+      if (typeof tz === 'string') q.set('timezone', tz);
+      const data = await api<any>('GET', `/best-times?${q.toString()}`);
+      if (WANT_JSON) return outJson(data);
+      const r = data?.combined ?? data?.best_times?.[0];
+      if (!r) return say('No best times found.');
+      const tag = (b: string) => (b === 'personal' ? 'your best time' : b === 'platform' ? `popular on ${r.platform}` : 'general guidance');
+      say(paint(`Best times (${data.timezone})`, C.bold));
+      for (const s of r.slots ?? []) say(`  ${s.label.padEnd(12)} next ${s.next.date} ${s.next.time}  ${paint(tag(s.basis), C.dim)}`);
+      say(paint(`  ${r.note}`, C.dim));
       return;
     }
 

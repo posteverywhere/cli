@@ -18,6 +18,8 @@ Authenticate one of two ways:
 - **Interactive:** `posteverywhere login` opens the browser; the user approves a short code and a scoped key is saved locally. Then `posteverywhere connect <platform>` to add accounts (instagram, tiktok, youtube, linkedin, facebook, x, threads, pinterest = browser OAuth; bluesky/telegram/discord/wordpress = the CLI prompts for credentials).
 - **Non-interactive (CI / headless agents):** `export POSTEVERYWHERE_API_KEY=pe_live_...` (from posteverywhere.ai → Settings → Developers).
 
+To give a coding agent the PostEverywhere MCP tools instead, run `posteverywhere connect` (no platform). It adds the hosted server `https://mcp.posteverywhere.ai` to Claude Code, Cursor, Codex, Gemini CLI, Windsurf, Cline and Zed, and the user signs in inside each agent. `--dry-run` shows the changes first; `--remove` undoes them.
+
 Run commands with `npx @posteverywhere/cli <command>` (or `posteverywhere <command>` if installed).
 
 ## Always start here

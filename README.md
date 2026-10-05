@@ -9,6 +9,39 @@ Post and schedule to **Instagram, TikTok, YouTube, LinkedIn, Facebook, X, Thread
 
 This repo is two things at once: a CLI you can drive by hand, and an **Agent Skill** that teaches Claude Code, Cursor, Codex and other agents how to use it. Every command emits JSON, so an agent can read the result of what it just did.
 
+## Connect your coding agents in one command
+
+```bash
+npx @posteverywhere/cli connect
+```
+
+This finds every coding agent on your machine and connects it to PostEverywhere's hosted MCP server, `https://mcp.posteverywhere.ai`. You sign in once inside each agent. No API key is written to disk.
+
+| Agent | What `connect` does | Your one step after |
+|---|---|---|
+| Claude Code | `claude mcp add --scope user --transport http posteverywhere https://mcp.posteverywhere.ai` | Run `/mcp`, pick posteverywhere, choose Authenticate |
+| Codex CLI | `codex mcp add posteverywhere --url https://mcp.posteverywhere.ai`, then `codex mcp login posteverywhere` (opens your browser) | None |
+| Gemini CLI | `gemini mcp add --scope user --transport http posteverywhere https://mcp.posteverywhere.ai` | Run `/mcp auth posteverywhere` |
+| Cursor | Adds `mcpServers.posteverywhere = {"url": ...}` to `~/.cursor/mcp.json` | Restart Cursor and sign in when asked |
+| Windsurf | Adds `mcpServers.posteverywhere = {"serverUrl": ...}` to `~/.codeium/windsurf/mcp_config.json` | Restart Windsurf and sign in when asked |
+| Cline | Adds `{"url": ..., "type": "streamableHttp"}` to `cline_mcp_settings.json` | Click Authenticate in Cline, MCP Servers |
+| Zed | Adds `context_servers.posteverywhere = {"url": ...}` to `~/.config/zed/settings.json` | Sign in when Zed asks |
+| Claude Desktop | Nothing to write: remote servers are added in the app | Settings, Connectors, Add custom connector, paste `https://mcp.posteverywhere.ai` |
+
+You get a checklist with the agents it found already ticked. Options:
+
+```bash
+posteverywhere connect --all                       # every agent found, no checklist
+posteverywhere connect --client cursor,claude-code # only these
+posteverywhere connect --dry-run                   # show the planned changes, change nothing
+posteverywhere connect --yes --json                # no prompts, JSON report (for scripts)
+posteverywhere connect --remove                    # take PostEverywhere out again
+```
+
+Config files are merged, never overwritten: other servers, settings and comments stay as they are, and each file is copied to `<file>.bak-posteverywhere-<timestamp>` before the first change. If a file cannot be read safely, it is left alone and you get the snippet to paste by hand.
+
+Once the npm package `posteverywhere` 2.x is out, `npx posteverywhere connect` does the same. (SDK users: the SDK is [`@posteverywhere/sdk`](https://www.npmjs.com/package/@posteverywhere/sdk). The `posteverywhere` package is now the CLI.)
+
 ## Install as an agent skill
 
 ```bash
@@ -56,7 +89,8 @@ export POSTEVERYWHERE_API_KEY=pe_live_...
 | `whoami` | The authed account, plan and remaining quota |
 | `accounts` | Connected social accounts, with ids and health |
 | `platform-rules [platform]` | Character limits, media constraints and supported features |
-| `connect <platform>` | Connect a new account |
+| `connect` | Connect your coding agents to PostEverywhere's MCP server (see above) |
+| `connect <platform>` | Connect a new social account |
 | `reconnect <accountId>` | Re-authorize an account whose token expired |
 | `account:health <id>` | Why one account can't post |
 | `post -c <text> -a <ids> [-s <iso>] [-m <mediaIds>]` | Publish now, or schedule with `-s` |

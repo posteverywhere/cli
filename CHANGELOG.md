@@ -5,6 +5,27 @@ All notable changes to `@posteverywhere/cli` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-10-05
+
+### Added
+
+- **`best-times`.** `posteverywhere best-times -a 123,456` shows the best times to post for those accounts (one combined pick for several), or `--platform instagram` for platform-wide times. Each time says what it is based on: the account's own posts, PostEverywhere users on that platform, or general guidance. `--tz` sets the timezone; `--json` prints the raw `GET /v1/best-times` response.
+
+## [0.6.0] - 2026-10-02
+
+### Added
+
+- **`connect` for coding agents.** `posteverywhere connect` (no platform) connects
+  every coding agent on the machine to the hosted MCP server,
+  `https://mcp.posteverywhere.ai`, in one go: Claude Code, Codex CLI and Gemini CLI
+  through their own `mcp add` commands; Cursor, Windsurf, Cline and Zed by merging
+  their config files; Claude Desktop with the Connectors step. The server signs you
+  in with OAuth, so no API key is written.
+  Flags: `--all`, `--client cursor,claude-code`, `--yes`, `--dry-run`, `--json`,
+  `--remove`. Config files are merged (comments kept) and backed up to
+  `<file>.bak-posteverywhere-<timestamp>` before the first change.
+- `npm test` (node:test) covers the config merges.
+
 ## [0.5.0] — 2026-09-26
 
 ### Added
