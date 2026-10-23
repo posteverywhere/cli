@@ -1,5 +1,7 @@
 # PostEverywhere — Official CLI & Agent Skill
 
+[![AgentShield Security](https://merx.help/badge/A+.svg)](https://merx.help/shield)
+
 [![npm version](https://img.shields.io/npm/v/%40posteverywhere%2Fcli.svg?style=flat-square)](https://www.npmjs.com/package/@posteverywhere/cli)
 [![npm downloads](https://img.shields.io/npm/dw/%40posteverywhere%2Fcli.svg?style=flat-square)](https://www.npmjs.com/package/@posteverywhere/cli)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
